@@ -1,0 +1,404 @@
+---
+title: "Phân tích các yếu tố ảnh hưởng đến xếp hạng của ứng dụng trên google play store "
+author: "Nguyễn Ngọc Hòa & Lê Đình Khang & Võ Thị Thanh Ngân"
+date: "24/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
+```
+
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+setwd("~")
+```
+
+## A. Giới thiệu
+Dữ liệu ứng dụng trên Cửa hàng Play (Google Play) có tiềm năng to lớn để thúc đẩy các doanh nghiệp sản xuất ứng dụng thành công. Thông tin chi tiết hữu ích có thể được rút ra để các nhà phát triển như chúng ta làm việc và nắm bắt thị trường Android! Chính vì thế, với project này, chúng ta sẽ cùng thực hiện một số phân tích thống kê về dữ liệu thu thập được từ CH Play để tìm ra các xu hướng và mẫu liên quan đến thị trường nhằm mục đích giúp các nhà phát triển định hướng cũng như tìm ra con đường đúng đăn để phát triển các ứng dụng Android.
+
+## B. Dữ liệu
+Tập dữ liệu đầu vào được tìm thấy trên Kaggle và thông tin được thu thập thông qua việc tìm kiếm trên web khoảng 10.000 ứng dụng Cửa hàng Play. Vì Google Play sử dụng các kỹ thuật hiện đại như tải trang động bằng JQuery, điều này khiến việc tìm kiếm khó khăn hơn. Mỗi ứng dụng có các giá trị cho danh mục, xếp hạng, kích thước, lượt cài đặt và các thông số kỹ thuật ứng dụng khác. Mặc dù Google Play cũng hoạt động như một cửa hàng phương tiện kỹ thuật số,nhưng trong phạm vi bài phân tích này chúng ta chỉ quan tâm đến ứng dụng Android vì thế dữ liệu chỉ bao gồm các ứng dụng di động.
+```{r}
+ggAppData <- read.csv("./Data/googleplaystore.csv")
+str(ggAppData)
+```
+## C. Mô tả các biến trong tập dữ liệu:
+Tập dữ liệu gồm 13 biến như sau(Lưu ý tất cả dữ liệu đều được thu thập từ năm 2019):
+
+- App : Tên của ứng dụng   
+- Category: Danh mục (Loại của ứng dụng)   
+- Rating: Trung bình xếp hạng của người dùng dành cho ứng dụng (Từ 1 đến 5)   
+- Reviews: Số lượng đánh giá của người dùng danh cho ứng dụng   
+- Size: Kích thước của ứng dụng.    
+- Installs: Số lượng người dùng đã cài đặt ứng dụng.    
+- Type: Ứng dụng miễn phí hoặc trả tiền.    
+- Price: Giá của ứng dụng.    
+- Content Rating: Nhóm tuổi mà ứng dụng nhắm  đến    
+- Genres: Thể loại phụ(Một ứng dụng có thể thuộc nhiều thể loại. Ví dụ: một trò chơi gia đình âm nhạc sẽ thuộc thể loại Âm nhạc, Trò chơi, Gia đình.)     
+- Last Updated: Lần cuối ứng dụng được cập nhật    
+- Current Ver: Phiên bản hiện tại của ứng dụng.    
+- Android Ver: Phiên bản Android thấp nhất mà ứng dụng yêu cầu để cài đặt được ứng dụng.    
+
+## D. Câu hỏi phân tích:
+### 1. Danh mục(Loại) ứng dụng cửa hàng Google Play nào có xếp hạng cao nhất?
+
+### 2. Liệu xếp hạng của một ứng dụng không bị hạn chế độ tuổi có khác biệt với một ứng dụng bị hạn chế độ tuổi hay không?
+
+### 3. Có sự khác biệt đáng kể về xếp hạng giữa ứng dụng cửa hàng Google Play trả phí hay miễn phí không?
+
+## E. Hiểu vấn đề
+### I.Xem lướt qua dữ liệu    
+#### 1.Các danh mục ứng dụng có khác biệt về xếp hạng hay không? Để trả lời câu hỏi này, ta xem qua danh mục ART AND DESIGN(ứng dụng đồ họa và thiết kế) và danh mục EDUCATION(ứng dụng giáo dục) xem 2 loại này có khác biệt rõ ràng về xếp hạng hay không
+```{r}
+ggAppData <- read.csv("./Data/googleplaystore.csv")
+head(ggAppData[ggAppData$Category=='ART_AND_DESIGN',c(2,3)],10)
+head(ggAppData[ggAppData$Category=='EDUCATION',c(2,3)],10)
+```
+- Rõ ràng 10 ứng dụng giáo dục đầu tiên trong tập dữ liệu có xếp hạng trung bình cao hơn so với 10 ứng dụng đồ họa và thiết kế.
+#### 2.Cùng xem qua đối tượng mà 15 ứng dụng hướng đến và xếp hạng tương ứng của nó
+```{r}
+head(ggAppData[,c(3,9)],15)
+```
+- Ta thấy phần lớn các ứng dụng dành cho mọi lưá tuổi, điều này khá hợp lý so với thực tế. Trong 15 ứng dụng này có 2 ứng dụng bị hạn chế nội dung và rõ ràng xếp hạng của chúng không cao.
+
+#### 3. 10 ứng dụng trả phí đầu tiên có xếp hạng như thế nào so với 10 ứng dụng miễn phí đầu tiên?
+```{r}
+head(ggAppData[ggAppData$Type=='Paid',c(7,3)],10)
+head(ggAppData[ggAppData$Type=='Free',c(7,3)],10)
+```
+- Xếp hạng của các ứng dụng có vẻ phân tán và không thể hiện sự khác biệt rõ ràng giữa 2 loại này.
+
+### II. Thiết kế nghiên cứu
+- Xét về mặt đặc tính của nghiên cứu thì nghiên cứu này là nghiên cứu quan sát (observational study) vì chúng ta chỉ quan sát và ghi nhận thực trạng đặc điểm/đặc tính và sự kiện diễn ra trong nghiên cứu mà không có tác động
+đến đối tượng nghiên cứu.
+- Vì chúng ta không có bất kỳ mẫu nào để so sánh nên nghiên cứu quan sát trên chỉ đơn giản là một nghiên cứu mô tả.
+- Như đã đề cập ở phần  trên dữ liệu được thu thập bằng cách tìm kiếm trên các trang web và vì vấn đề kỹ thuật nên việc này khá khó khăn. Vì thế các phần tử trong tập dữ liệu này hoàn toàn là ngẫu nhiên và xác suất được chọn của các ứng dụng là như nhau. chính vì vậy, cách lấy mẫu ở đây là chọn mẫu theo xác suất và phương pháp chọn mẫu là phương pháp chọn mẫu ngẫu nhiên đơn giản(Simple random sampling)
+
+## F. Suy ngẫm về câu hỏi
+### Trước khi chúng ta bắt đầu phân tích dữ liệu bằng cách trực quan hóa và kiểm định thống kê thì chúng ta sẽ trả lời một cách chủ quan các câu hỏi đã đề ra:
+- Đầu tiên, như chúng ta đã biết, hiện nay các ứng dụng liên quan đến giáo dục,giải trí đang rất thịnh hành, chính vì thế theo ý kiến chủ quan thì ta có thể dự đoán rằng các ứng dụng này thường sẽ có rating(xếp hạng người dùng) cao hơn các ứng dụng thuộc các lĩnh vực còn lại.
+- Dĩ nhiên trong thực tế, bị giới hạn hoặc buộc phải xác thực độ tuổi khi sử dụng một ứng dụng là điều khá bất tiện, chính vì thế điều này sẽ ảnh hưởng đến rating của người dùng dành cho ứng dụng. Vì thế có lẽ các ứng dụng không giới hạn độ tuổi thường sẽ có rating cao hơn.
+- Cuối cùng, một ứng dụng phải trả tiền thì nó sẽ đem lại những trải nghiệm tốt hơn cũng như luôn có trách nhiệm với người dùng của mình hơn, vì thế nên độ hài lòng của khách hàng có vẻ như sẽ cao hơn các ứng dụng miễn phí.
+
+## G. Phân tích dữ liệu
+Đầu tiên, chúng ta xóa các dòng bị thiếu hoặc NaN vì chúng chiếm số lượng khá nhỏ so với tập dữ liệu của chúng ta.
+```{r}
+googlePS <-as.data.frame(ggAppData)
+str(googlePS)
+googlePlay <- googlePS[complete.cases(googlePS),]
+#Kiểm tra và xóa giá trị nhập lỗi trong dataset
+googlePlay<-googlePlay[googlePlay$Rating<=5,]
+```
+
+Trong phạm vi của bài phân tích này, chúng ta sử dụng 3 loại biểu đồ, side by side boxplots để so sánh center, spread và outliers của các nhóm; histogram để mô tả phân bố của từng mẫu và QQplot để so sánh phân phối xác suất của mẫu với phân phối chuẩn.  
+
+### Câu hỏi 1:Danh mục(Loại) ứng dụng cửa hàng Google Play nào có xếp hạng cao nhất?
+Trong phạm vi của bài phân tích này, ta chỉ quan tâm đến một số danh mục phổ biến và nổi bật trong thực tế như: GAME, BUSINESS, EDUCATION, ENTERTAINMENT, LIFESTYLE, DATING
+```{r}
+q1<-googlePlay[googlePlay$Category==c('GAME','BUSINESS','EDUCATION','ENTERTAINMENT','LIFESTYLE','DATING'),]
+```
+
+#### 1. Xác định các biến có liên quan
+- Biến giải thích: Category, loại categorical
+
+- Biến phản hồi: Rating, loại quantitative
+
+#### 2. Phân tích thăm dò (Exploratory Analysis)
+- Vẽ biểu đồ side by side boxplots
+```{r}
+## Side by side boxplot
+ggplot(data = q1, aes(x = Category, y = Rating),ylim=c(0,5)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun.y = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ Boxplots so sánh rating giữa các danh mục ứng dụng")
+```
+
+- Tóm tắt Five-numbers summary:
+```{r}
+tapply(q1$Rating, q1$Category, summary)
+```
+
+ - Center: Trung vị rating của các ứng dụng giáo dục là cao nhất và cao hơn khá đáng kể so với các danh mục còn lại.
+ - Spread: Xếp hạng của các danh mục có range khác nhau, rộng nhất là DATING và hẹp nhất là ENTERTAINMENT
+ - Outliers: Chỉ có 2 nhóm không có giá trị ngoại biên đó là EDUCATION và ENTERTAINMENT.
+- Vẽ biểu đồ histogram:
+```{r}
+# Biểu đồ Histogram
+xbar <- tapply(q1$Rating, q1$Category, mean)
+s <- tapply(q1$Rating, q1$Category, sd)
+q1$normal.density <- apply(q1, 1, function(x){
+  dnorm(as.numeric(x["Rating"]),
+        xbar[x["Category"]], s[x["Category"]])})
+ggplot(q1, aes(x = Rating)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20,
+                 fill = "grey", col = "black") +
+  facet_grid(Category ~ .) +
+  geom_density(col = "red", lwd = 1) +
+  geom_line(aes(y = normal.density), col = "blue", lwd = 1) +
+  ggtitle("Biểu đồ hàm mật độ phân phối xác suất")
+```
+
+- Ta có, đường màu xanh biểu diễn hàm mật độ phân phối chuẩn với trung bình và độ lệch chuẩn của mẫu tương ứng, đường màu xanh là hàm  mật độ thực tế, ta thấy LIFESTYLE và DATING là những mẫu có biến rating có hàm mật độ xác suất gần với phân phối chuẩn nhất.
+- Vẽ biểu đồ QQplot
+```{r}
+# Biểu đồ QQ plot
+q1$intercept <- apply(q1, 1, function(x){xbar[x["Category"]]})
+q1$slope <- apply(q1, 1, function(x){s[x["Category"]]})
+ggplot(q1, aes(sample = Rating)) +
+  stat_qq() +
+  facet_grid(Category ~ .) +
+  geom_abline(data = q1, aes(intercept = intercept, slope = slope)) +
+  ggtitle("Biểu đồ QQPlot so sánh phân bố các mẫu với phân phối chuẩn")
+```
+
+- Trên biểu đồ QQplot ta thấy sự liên quan giữa các giá trị mong đợi(truc hoành) và các giá trị quan sát được(trục tung) của các mẫu đều có vẻ như nằm trên đường thẳng chéo, vì thế nên các mẫu này đều khá gần với phân phối chuẩn. Điều này giúp chúng ta có thể yên tâm hơn khi sử dụng định lý giới hạn trung tâm để thực hiện các kiểm định thống kê.
+
+#### 3. Suy diễn
+- Suy diễn thống kê cho thống kê hiện tại thuộc loại so sánh nhiều hơn 2 population mean.
+- Kiểm định thống kê phù hợp cho câu hỏi này là ANOVA F-test
+- Xác định các giả thuyết
+
+  - Null hypothesis: $H_0:$ Không có sự khác biệt về Rating giữa các danh mục ứng dụng khác nhau
+
+  - Alternative hypothesis: $H_A:$Có sự khác biệt về Rating giữa các danh mục ứng dụng khác nhau
+```{r}
+# ANOVA test
+fit <- aov(Rating ~ Category, data = q1)
+summary(fit)
+TukeyHSD(fit, conf.level = 0.95)
+```
+
+- Dựa vào kết quả trên, ANOVA F-test chỉ ra rằng có bằng chứng thống kê đáng kể để kết luận rằng rating trung bình thực sự giữa tất cả các danh mục là không bằng nhau. 
+  - p-value = 1.77e-6
+  - Vì $p$-value nhỏ hơn mức ý nghĩa $\alpha = 0.05$ nên ta bác bỏ $H_0$.
+  - Dựa vào bảng HSD ta có thể thấy được các cặp mẫu có p-value nhỏ hơn 0.05 là có sự khác biệt về rating theo mặt thống kê .  
+
+#### 4. Kết luận
+- Phân tích thăm dò cho thấy sự khác biệt về rating trung bình giữa các danh mục ứng dụng khác nhau. Cụ thể hơn, ta có thể thấy các nhóm EDUCATION-BUSINESS, EDUCATION-DATING, GAME-DATING có sự khác biệt rõ ràng về mặt thống kê. 
+- Kiểm định thống kê cho ra giá trị $p$ rất nhỏ (về cơ bản là 0), cho thấy bằng chứng được cung cấp bởi dữ liệu đủ mạnh để bác bỏ $H_0$ và kết luận rằng  có sự khác biệt về Rating giữa các danh mục ứng dụng khác nhau. Điều này khá đúng với thực tế khi mà những ứng dụng hẹn hò online hoặc kinh doanh online thường ít được quan tâm ở thời điểm hiện tại, chỉ có một vài ngoại lệ như Tinder, Dating on Facebook, Momo,...thay vào đó các game hoặc các ứng dụng giáo dục lại nhận về rating khá cao như Ghensin Impact, ELSA Speak,...
+- Dữ liệu cũng như kết quả của nghiên cứu trên không đưa ra bằng chứng cho việc chúng ta cứ phát hành một ứng dụng giáo dục hoặc giải trí là rating từ người dùng sẽ cao, vì đây là một nghiên cứu quan sát, trường hợp duy nhất mà từ có mối quan hệ có thể suy ra nhân quả (association implies causation) là khi nghiên cứu là một thí nghiệm ngẫu nhiên tuy nhiên để thu thập được toàn bộ danh sách các ứng dụng từ CHPlay ở thời điểm hiện tại gần như là không thể, vì thế rất khó đảm bảo tính ngẫu nhiên của thí nghiệm.Có thể hiểu sự khác biệt này là vì phần lớn người dùng Android dùng điện thoại để giải trí hoặc học tập vì thế nên các ứng dụng này thường làm hài lòng người dùng hơn.
+- Điều này hoàn toàn trùng khớp với mong đợi của chúng ta và có thể làm động lực cho bất kỳ một ai đó đang muốn phát triển một ứng dụng giải trí hoặc giáo dục.
+
+### Câu hỏi 2: Liệu xếp hạng của một ứng dụng không bị hạn chế độ tuổi có khác biệt với một ứng dụng bị hạn chế độ tuổi hay không?
+Đầu tiên ta có thể hiểu không bị giới hạn độ tuổi tức là hướng đến tât cả mọi người:
+```{r}
+googlePlay$Content.Rating<-ifelse(googlePlay$Content.Rating=='Everyone','Non-restricted','Restricted')
+```
+
+#### 1. Xác định các biến có liên quan
+- Biến giải thích: Content.Rating, loại categorical
+
+- Biến phản hồi: Rating, loại quantitative
+
+#### 2. Phân tích thăm dò (Exploratory Analysis)
+- Vẽ biểu đồ side by side boxplot
+```{r}
+# Side by side boxplot of data
+ggplot(data = googlePlay, aes(x = Content.Rating, y = Rating)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun.y = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ Boxplots so sánh rating giữa hai loại ứng dụng")
+```
+- Tóm tắt Five-numbers summary:
+```{r}
+tapply(googlePlay$Rating, googlePlay$Content.Rating, summary)
+```
+
+ - Center: Trung vị rating của các ứng dụng giới hạn độ tuổi và không giới hạn độ tuổi là như nhau
+ - Spread: Rating của hai mẫu này có range bằng nhau
+ - Outliers: Có vẻ như rating của 2 loại ứng dụng này tương đối phân tán khi có khá nhiều giá trị ngoại biên
+- Vẽ biểu đồ histogram:
+```{r}
+# Histogram of data
+xbar <- tapply(googlePlay$Rating, googlePlay$Content.Rating, mean)
+s <- tapply(googlePlay$Rating, googlePlay$Content.Rating, sd)
+googlePlay$normal.density <- apply(googlePlay, 1, function(x){
+  dnorm(as.numeric(x["Rating"]),
+        xbar[x["Content Rating"]], s[x["Content Rating"]])})
+ggplot(googlePlay, aes(x = Rating)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20,
+                 fill = "grey", col = "black") +
+  facet_grid(Content.Rating ~ .) +
+  geom_density(col = "red", lwd = 1) +
+  geom_line(aes(y = normal.density), col = "blue", lwd = 1) +
+  ggtitle("Biểu đồ hàm mật độ phân phối xác suất")
+```
+
+- Vẽ biểu đồ QQplot
+```{r}
+# QQ Plot of data
+googlePlay$intercept <- apply(googlePlay, 1, function(x){xbar[x["Content Rating"]]})
+googlePlay$slope <- apply(googlePlay, 1, function(x){s[x["Content Rating"]]})
+ggplot(googlePlay, aes(sample = Rating)) +
+  stat_qq() +
+  facet_grid(Content.Rating ~ .) +
+  geom_abline(data = googlePlay, aes(intercept = intercept, slope = slope)) +
+  ggtitle("Biểu đồ QQPLot so sánh phân bố mẫu với phân phối chuẩn")
+
+```
+
+- Tương tự như câu hỏi trên, ta thấy hình dạng của 2 biểu đồ histogram và qqplot gần giống với hình dạng của phân phối chuẩn.
+
+#### 3. Suy diễn
+- Suy diễn thống kê cho thống kê hiện tại thuộc loại so sánh hai population mean
+- Kiểm định thống kê phù hợp cho câu hỏi này là two sample t-test for two means ($\mu_1, \mu_2$)
+- Xác định các giả thuyết
+
+  - Null hypothesis: $H_0: \mu_1 - \mu_2 = 0$
+
+  - Alternative hypothesis: $H_A: \mu_1 - \mu_2 \ne 0$
+- **Tính test statistic**
+```{r}
+mu2 = mean(googlePlay[googlePlay$Content.Rating=='Restricted',3])
+mu1 = mean(googlePlay[googlePlay$Content.Rating=='Non-restricted',3])
+n2 = length(googlePlay[googlePlay$Content.Rating=='Restricted',3])
+n1 = length(googlePlay[googlePlay$Content.Rating=='Non-restricted',3])
+s2 = sd(googlePlay[googlePlay$Content.Rating=='Restricted',3])
+s1 = sd(googlePlay[googlePlay$Content.Rating=='Non-restricted',3])
+se = sqrt(s1^2/n1 + s2^2/n2)
+t = (mu1 - mu2)/se
+```
+
+- **Tính p-value**
+```{r}
+v = (s2^2/n2 + s1^2/n1)^2/((s1^2/n1)^2/(n1-1) + (s2^2/n2)^2/(n2-1))
+p_value = 2*pt(q = t, df = v) 
+p_value
+```
+- Kiểm tra lại bằng hàm `t.test` trong R
+```{r}
+# t-Test
+t.test(googlePlay$Rating ~ googlePlay$Content.Rating, mu = 0, conf.level = 0.95,
+       paired = FALSE, alternative = "two.sided", var.equal = FALSE)
+#Kiểm tra kỳ vọng của chúng ta:
+t.test(googlePlay$Rating ~ googlePlay$Content.Rating, mu = 0, conf.level = 0.95,
+       paired = FALSE, alternative = "greater", var.equal = FALSE)
+```
+- Dựa vào kết quả trên, two sample t-test chỉ ra rằng có bằng chứng thống kê đáng kể để kết luận rằng Rating của những ứng dụng bị giới hạn độ tuổi và không bị giới hạn  là thực sự khác nhau.
+  - p-value = 0.0228
+  - Vì $p$-value nhỏ hơn mức ý nghĩa $\alpha = 0.05$ nên ta bác bỏ $H_0$.
+
+#### 4. Kết luận
+- Phân tích thăm dò cho thấy sự khác biệt về rating trung bình giữa các ứng dụng bị giới hạn độ tuổi và không bị giới hạn.
+- Kiểm định thống kê cho ra giá trị $p$ khá gần với 0.05 vì thế không  có sự khác biệt tuyệt đối giữa 2 loại ứng dụng này. Ta thấy trung bình rating của ứng dụng bị giới hạn độ tuổi trong tập dữ liệu này là cao hơn, điều này chứng tó các ứng dụng bị giới hạn độ tuổi mặc dù tập người dùng nhỏ hơn nhưng chưa chắc là không làm hài lòng được người dùng.
+- Dữ liệu cũng như kết quả của nghiên cứu trên không đưa ra bằng chứng cho việc chúng ta cứ phát hành một ứng dụng bị giới hạn độ tuổi thì rating từ người dùng sẽ khác, hay lớn hơn so với một ứng dụng không bị giới hạn lý do cũng tương tự như phần này ở câu hỏi trên. Có thể hiểu sự khác biệt này là vì các ứng dụng bị giới hạn độ tuổi như game hoặc các nội dung giải trí dành cho người lớn những ứng dụng này mặc dù có tập người dùng nhỏ hơn nhưng nó nhắm đến đúng đối tượng và phục vụ được nhu cầu của đối tượng đó nên họ hài lòng về ứng dụng và đánh giá ứng dụng khá cao.
+- Điều này không trùng khớp với quan điểm chủ quan của chúng ta khi ta nghĩ rằng cứ nhiều dùng, cứ thịnh hành là rating sẽ cao. Đây là một bằng chứng khá xác thực để đưa ra lời khuyên dành cho những người phát triển ứng dụng.
+
+### Câu hỏi 3:Có sự khác biệt đáng kể về xếp hạng giữa ứng dụng cửa hàng Google Play trả phí hay miễn phí không?
+
+#### 1. Xác định các biến có liên quan
+- Biến giải thích: Type, loại categorical
+
+- Biến phản hồi: Rating, loại quantitative
+
+#### 2. Phân tích thăm dò (Exploratory Analysis)
+- Vẽ biểu đồ side by side boxplots
+```{r}
+# Side by side boxplot of data
+ggplot(data = googlePlay, aes(x = Type, y = Rating)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun.y = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ boxplots so sánh rating giữa 2 loại ứng dụng")
+```
+- Tóm tắt Five-numbers summary:
+```{r}
+tapply(googlePlay$Rating, googlePlay$Type, summary)
+```
+ 
+ - Center: Trung vị rating của các ứng dụng trả tiền là cao hơn nhưng không đáng kể.
+ - Spread: Rating của hai mẫu này có range bằng nhau.
+ - Outliers: Có vẻ như rating của 2 loại ứng dụng này tương đối phân tán khi có khá nhiều giá trị ngoại biên
+ 
+- Vẽ biểu đồ histogram
+```{r}
+# Histogram of data
+xbar <- tapply(googlePlay$Rating, googlePlay$Type, mean)
+s <- tapply(googlePlay$Rating, googlePlay$Type, sd)
+googlePlay$normal.density <- apply(googlePlay, 1, function(x){
+  dnorm(as.numeric(x["Rating"]),
+        xbar[x["Type"]], s[x["Type"]])})
+ggplot(googlePlay, aes(x = Rating)) +
+  geom_histogram(aes(y = ..density..), 
+                 # bins = sqrt(nrow(bike)) + 2,
+                 bins = 20,
+                 fill = "grey", col = "black") +
+  facet_grid(Type ~ .) +
+  geom_density(col = "red", lwd = 1) +
+  geom_line(aes(y = normal.density), col = "blue", lwd = 1) +
+  ggtitle("Biểu đồ hàm mật độ phân phối xác suất")
+```
+- Vẽ biểu đồ QQPlot
+```{r}
+# QQ Plot of data
+googlePlay$intercept <- apply(googlePlay, 1, function(x){xbar[x["Type"]]})
+googlePlay$slope <- apply(googlePlay, 1, function(x){s[x["Type"]]})
+ggplot(googlePlay, aes(sample = Rating)) +
+  stat_qq() +
+  facet_grid(Type ~ .) +
+  geom_abline(data = googlePlay, aes(intercept = intercept, slope = slope)) +
+  ggtitle("Biểu đồ QQPlot so sánh phân bố mẫu với phân phối chuẩn")
+
+```
+- Ngược lại với 2 phân tích ở trên, ở đây ta thấy hình dạng của histogram không khớp với phân phối chuẩn, mối quan hệ giữa giá trị quan sát và giá trị kỳ vọng cũng không nằm trên đường chéo trong qqplot, việc ta xấp xỉ phân bố mẫu về phân phối chuẩn có thể sẽ bị lệch tuy nhiên cỡ mẫu mà chúng ta sử dụng là khá lớn nên chúng ta vẫn có thể sử dụng định lý giới hạn trung tâm.
+
+#### 3. Suy diễn
+- Suy diễn thống kê cho thống kê hiện tại thuộc loại so sánh hai population mean
+- Kiểm định thống kê phù hợp cho câu hỏi này là two sample t-test for two means ($\mu_1, \mu_2$)
+- Xác định các giả thuyết
+
+  - Null hypothesis: $H_0: \mu_1 - \mu_2 = 0$
+
+  - Alternative hypothesis: $H_A: \mu_1 - \mu_2 \ne 0$
+- **Tính test statistic**
+```{r}
+mu1 = mean(googlePlay[googlePlay$Type=='Free',3])
+mu2 = mean(googlePlay[googlePlay$Type=='Paid',3])
+n1 = length(googlePlay[googlePlay$Type=='Free',3])
+n2 = length(googlePlay[googlePlay$Type=='Paid',3])
+s1 = sd(googlePlay[googlePlay$Type=='Free',3])
+s2 = sd(googlePlay[googlePlay$Type=='Paid',3])
+se = sqrt(s1^2/n1 + s2^2/n2)
+t = (mu1 - mu2)/se
+```
+
+- **Tính p-value**
+```{r}
+v = (s2^2/n2 + s1^2/n1)^2/((s1^2/n1)^2/(n1-1) + (s2^2/n2)^2/(n2-1))
+p_value = 2*pt(q = t, df = v) 
+p_value
+```
+- Kiểm tra lại bằng hàm `t.test` trong R
+```{r}
+# t-Test
+t.test(googlePlay$Rating ~ googlePlay$Type, mu = 0, conf.level = 0.95,
+       paired = FALSE, alternative = "two.sided", var.equal = FALSE)
+# Kiểm định kỳ vọng của chúng ta:
+t.test(googlePlay$Rating ~ googlePlay$Type, mu = 0, conf.level = 0.95,
+       paired = FALSE, alternative = "less", var.equal = FALSE)
+```
+- Dựa vào kết quả trên, two sample t-test chỉ ra rằng có bằng chứng thống kê đáng kể để kết luận rằng Rating của những ứng dụng trả phí và không trả phí là thực sự khác nhau
+  - p-value = 0.0003
+  - Vì $p$-value nhỏ hơn mức ý nghĩa $\alpha = 0.05$ nên ta bác bỏ $H_0$.
+
+#### 4. Kết luận
+- Phân tích thăm dò cho thấy sự khác biệt về rating trung bình giữa các ứng dụng miễn phí và có trả tiền cụ thể hơn các ứng dụng trả tiền có rating trung bình cao hơn các ứng dụng miễn phí.
+- Kiểm định thống kê cho ra giá trị $p$ rất nhỏ (về cơ bản là 0), cho thấy bằng chứng được cung cấp bởi dữ liệu đủ mạnh để bác bỏ $H_0$ và kết luận rằng  có sự khác biệt về Rating giữa các ứng dụng miễn phí và trả tiền. Điều này khá đúng với thực tế khi mà những ứng dụng trả tiền thường có dịch vụ chăm sóc khách hàng tốt hơn.
+- Dữ liệu cũng như kết quả của nghiên cứu trên không đưa ra bằng chứng cho việc chúng ta cứ phát hành một ứng dụng miễn phí là rating từ người dùng sẽ thấp hơn so với ứng dụng trả tiền, lý do cũng tương tự như phần này ở những  câu hỏi trên. Có thể hiểu sự khác biệt này là vì phần lớn người dùng đánh giá rất cao dịch vụ chăm sóc khách hàng cũng như trải nghiệm của các ứng dụng trả tiền.
+- Điều này hoàn toàn trùng khớp với mong đợi của chúng ta và nó cũng thể hiện đúng về mặt thưc tế. Tuy nhiên điều này không hẳn là đúng ở Việt Nam khi các ứng dụng trả tiền rất có ít chỗ đứng và hiển nhiên kéo theo rating cũng khác xa nhau. Mặc dù bạn có thể thử thách bản thân bằng cách phát triển một ứng dụng trả tiền và làm cho nó trở nên trending tuy nhiên lựa chọn an toàn luôn luôn là miễn phí tải về và trả tiền sau.
+
+## H. Tổng kết
+
+- Dựa trên kết quả phân tích của chúng tôi, có bằng chứng thống kê cho thấy rằng danh mục "EDUCATION" có đánh giá cao nhất. Điều này có thể là do các ứng dụng giáo dục làm hài lòng người dùng một cách tự nhiên,vì vậy nhận về rating cao. Ngoài ra còn có bằng chứng thống kê cho thấy rằng Ứng dụng cửa hàng Play có nội dung bị hạn chế độ tuổi xếp hạng cao hơn  so với ứng dụng  không bị giới hạn độ tuổi và có sự khác biệt đáng kể về xếp hạng giữa ứng dụng miễn phí hoặc trả phí.Dành cho các nhà phát triển di động hoặc những ngườitìm cách phát triển các ứng dụng,ý tưởng chung cho một ứng dụng có thể giúp tăng xếp hạng trên Google Play. Những kết quả hứa hẹn rằng các nhà phát triển trong tương lai có thể định hình thị trường Android.
+-  Nhược điểm của bài phân tích trên:
+  - Nghiên cứu trên là một nghiên cứu quan sát, vì vậy không thể đưa ra kết luận nhân quả.
+  - Có thể đưa ra kết luận cho "quần thể" vì mẫu được thu thập một cách ngẫu nhiên, tuy nhiên những kết quả này có thể không còn đúng đến hiện tại bởi vì thời điểm thu thập dữ liệu cách đây khá lâu.
+  - Hiểu biết và thời gian có hạn nên không tránh khỏi các sai sót trong bài.
+  - Rất khó để có thể dựa vào tập dữ liệu hiện có và đưa ra kết luận cho toàn bộ các ứng dụng trên Google Play vì như đã đề cập ở phần đầu, đây chỉ là những ứng dụng mà ta có thể thu thập được thông tin trên các trang web, còn một lượng rất lớn các ứng dụng khác mà ta gần như không có cách nào có thể thống kê được dữ liệu về nó. Vì vậy việc lập danh sách toàn bộ các ứng dụng gần như là không thể, từ đó tính ngẫu nhiên của mẫu cũng không còn được đảm bảo.
