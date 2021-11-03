@@ -1,0 +1,45 @@
+Nhóm : Lê Đình Khang - 18133021
+Nguyễn Ngọc Hòa - 18133014
+Võ Thị Thanh Ngân - 18133033
+
+
+
+1. Giới thiệu:
++ Tên Đề Tài:  Phân tích các yếu tố ảnh hưởng đến xếp hạng của ứng dụng trên google play store
++ Lấy tại https://www.kaggle.com/lava18/google-play-store-apps
++ Nguồn dữ liệu: dữ liệu được thu thập tại Google Play Store
++ Ý tưởng: Cảm hứng
+	Dữ liệu ứng dụng trên Cửa hàng Play có tiềm năng to lớn để thúc đẩy các doanh nghiệp sản xuất ứng dụng thành công. Thông tin chi tiết hữu ích có thể được rút ra để các nhà phát triển làm việc và nắm bắt thị trường Android!
++ Đối tượng dữ liệu là các ứng dụng trên Google Play Store
++ Gồm 13 columns và 10842 bộ :
+	- App: tên ứng dụng 
+	- Category: thể loại chính của ứng dụng
+	- Rating: điểm xếp hạng của ứng dụng (từ 0 tới 5)
+	- Reviews: số lượng nhận xét về ứng dụng
+	- Size: kích thước về ứng dụng
+	- Installs: số lượng lượt tải về của ứng dụng
+	- Type: ứng dụng thuộc loại trả phí hay free
+	- Price: giá của ứng dụng
+	- Content Rating : Nhóm tuổi mà ứng dụng nhắm đến (Everyone, Teen, Other)
+	- Genres: thể loại khác (một ứng dụng có thể thuộc nhiều thể loại)
+	- Last Updated: ngày cập nhập phiên bản cuối cùng
+	- Current Ver: phiên bản hiện tại
+	- Android Ver: phiên bản android tối thiểu để sử dụng ứng dụng
++ Kích thước tập dữ liệu : 1.3M
++ Các biến phân loại : Category, Type, Content Rating, Genres, Last Updated, Current Ver, Android Ver
++ Các biến số: Rating, Reviews, Price
+2. Đề xuất:
+	Đề xuất chính: xem xét sự ảnh hưởng của các yếu tố như thể loại, số lượng tải,.. đến điểm rating của ứng dụng 
+
+	1. Loại free và trả phí có ảnh hưởng đến diểm rating hay không
+	2. Thể loại ứng dụng có ảnh hưởng tới điểm rating của ứng dụng hay không?
+	3. Nhóm tuổi là mục tiêu của ứng dụng có ảnh hưởng tới điểm rating của ứng dụng hay không?
+	3. Số lượng reviews có ảnh hưởng tới điểm rating của ứng dụng hay không?
+	4. kích thước của ứng dụng có ảnh hưởng tới điểm rating của ứng dụng hay không?
+	5. số lượng lượt tải ứng dụng sẽ ảnh hưởng như thế nào đến điểm rating của ứng dụng?
+	6. Giá của ứng dụng sẽ ảnh hưởng như thế nào đến điểm rating của ứng dụng
+	
+	Phần Kiểm định giả thuyết:
+
+	1. Liệu một ứng dụng có lượt tải lớn có thật sự có điểm rating cao hay không?
+	2. Liệu một ứng dụng là game thì sẽ có rating cao hơn các loại còn lại?
